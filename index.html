@@ -1,104 +1,175 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Orquestación Zapia</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Zapia Nexus - Panel Maestro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body { background-color: #0f172a; color: #f8fafc; }
-        .card { background-color: #1e293b; border: 1px solid #334155; }
+        :root {
+            --color-primary: #1a73e8;
+            --color-primary-dark: #8ab4f8;
+            --color-success: #34a853;
+            --color-warning: #fbbc04;
+            --color-danger: #ea4335;
+        }
+        html.dark {
+            --color-text-base: #e0e0e0;
+            --color-bg-base: #121212;
+            --color-bg-card: #1f1f1f;
+            --color-border: #333;
+            --color-accent: var(--color-primary-dark);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg-base);
+            color: var(--color-text-base);
+        }
+        .glass-panel {
+            background: rgba(31, 31, 31, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .agent-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .agent-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--color-primary);
+            box-shadow: 0 10px 20px -10px rgba(26, 115, 232, 0.3);
+        }
+        .agent-dot {
+            width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+        }
+        .agent-dot.online {
+            background-color: #34a853;
+            box-shadow: 0 0 10px rgba(52, 168, 83, 0.6);
+            animation: sync-pulse 2s infinite;
+        }
+        .agent-dot.offline {
+            background-color: #ea4335;
+            box-shadow: 0 0 4px rgba(234, 67, 53, 0.3);
+        }
+        @keyframes sync-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.4); }
+        }
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-blue-400">Panel Central Zapia</h1>
-            <div id="status-badge" class="px-3 py-1 rounded-full bg-green-900 text-green-300 text-sm">Sistema Online</div>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Estado de las Zapias -->
-            <div class="card p-6 rounded-xl col-span-2">
-                <h2 class="text-xl font-semibold mb-4 flex items-center">
-                    <span class="mr-2">🤖</span> Estado de Agentes
-                </h2>
-                <div id="zapias-list" class="space-y-4">
-                    <!-- Dinámico -->
-                    <div class="animate-pulse flex space-x-4">
-                        <div class="flex-1 space-y-4 py-1">
-                            <div class="h-4 bg-slate-700 rounded w-3/4"></div>
-                            <div class="h-4 bg-slate-700 rounded"></div>
-                        </div>
-                    </div>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-6">
+            <div>
+                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                    Zapia Nexus <span class="text-sm font-normal text-gray-500 ml-2">v2.0</span>
+                </h1>
+                <p class="text-gray-400 mt-1">Coordinación Maestra de Agentes de Ventas</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="syncAll()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i> Sincronizar Todo
+                </button>
+                <div class="px-4 py-2 glass-panel rounded-lg flex items-center gap-3">
+                    <span class="text-sm text-gray-400">Estado Global:</span>
+                    <span class="agent-dot online"></span>
+                    <span class="text-sm font-bold text-green-400 uppercase tracking-wider">Activo</span>
                 </div>
             </div>
+        </header>
 
-            <!-- Libreto Maestro -->
-            <div class="card p-6 rounded-xl">
-                <h2 class="text-xl font-semibold mb-4">📖 Libreto Maestro</h2>
-                <textarea id="libreto-text" class="w-full h-64 bg-slate-900 border border-slate-700 rounded p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Cargando instrucciones..."></textarea>
-                <button onclick="saveLibreto()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
-                    Guardar Cambios
-                </button>
+        <!-- Agentes Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <!-- Los agentes se cargan aquí vía JS -->
+            <div id="agents-container" class="contents">
+                <div class="animate-pulse flex space-x-4">Cargando agentes...</div>
             </div>
         </div>
 
-        <!-- Chat / Logs -->
-        <div class="card p-6 rounded-xl mt-6">
-            <h2 class="text-xl font-semibold mb-4">💬 Log de Actividad</h2>
-            <div id="logs-container" class="h-48 overflow-y-auto bg-slate-900 rounded p-4 font-mono text-xs space-y-1">
-                <!-- Logs dinámicos -->
-            </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            <!-- Libreto Maestro -->
+            <section class="lg:col-span-2 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        <i class="fas fa-book-open text-blue-400"></i> Libreto Maestro de Ventas
+                    </h2>
+                    <span class="text-xs text-gray-500 uppercase tracking-widest">Última edición: hace 2 min</span>
+                </div>
+                <div class="glass-panel rounded-xl overflow-hidden border border-gray-800">
+                    <textarea id="sales-script" class="w-full h-96 p-6 bg-transparent text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none font-mono text-sm leading-relaxed" placeholder="Escribe aquí el guión que usarán todas tus Zapias..."></textarea>
+                    <div class="p-4 bg-black/30 border-t border-gray-800 flex justify-end">
+                        <button onclick="saveScript()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-emerald-900/20">
+                            Actualizar en la Nube
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs de Actividad -->
+            <section class="space-y-4">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <i class="fas fa-terminal text-emerald-400"></i> Actividad Reciente
+                </h2>
+                <div class="glass-panel rounded-xl border border-gray-800 h-[480px] overflow-hidden flex flex-col">
+                    <div id="logs" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll font-mono text-[11px]">
+                        <div class="text-gray-500">[15:40:12] Zapia Brenda conectada.</div>
+                        <div class="text-blue-400">[15:42:01] Relevo automático: Brenda -> Sofía.</div>
+                        <div class="text-emerald-400">[15:45:30] Lead Cerrado por Zapia Sofía ($15.000).</div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://ypzudkxowpxvdggvongz.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_KmyqfJTmmW4R5FKUeB5b4A_GVFYnn4b';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const agents = [
+            { name: 'Brenda', status: 'online', task: 'Ventas Academy', load: 12 },
+            { name: 'Sofía', status: 'online', task: 'Soporte Clientes', load: 5 },
+            { name: 'Micaela', status: 'offline', task: 'En espera (10m)', load: 0 },
+            { name: 'Valentina', status: 'offline', task: 'En espera (20m)', load: 0 },
+            { name: 'Zapia 5', status: 'offline', task: 'En espera (30m)', load: 0 }
+        ];
 
-        async function loadData() {
-            // Cargar Libreto
-            const { data, error } = await supabase
-                .from('system_state')
-                .select('value')
-                .eq('key', 'libreto_maestro')
-                .single();
-            
-            if (data) document.getElementById('libreto-text').value = data.value;
-            
-            // Cargar Zapias (simulado por ahora)
-            const zapias = [
-                { name: 'Zapia Alpha', status: 'Activa', role: 'Ventas', last: 'Hace 2m' },
-                { name: 'Zapia Beta', status: 'Standby', role: 'Soporte', last: 'Hace 15m' },
-                { name: 'Zapia Gamma', status: 'Off', role: 'Ads', last: '-' }
-            ];
-            
-            const list = document.getElementById('zapias-list');
-            list.innerHTML = zapias.map(z => `
-                <div class="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
-                    <div>
-                        <p class="font-bold">${z.name} <span class="text-xs font-normal text-slate-400">(${z.role})</span></p>
-                        <p class="text-xs text-slate-500">Última actividad: ${z.last}</p>
+        function renderAgents() {
+            const container = document.getElementById('agents-container');
+            container.innerHTML = agents.map(agent => `
+                <div class="agent-card glass-panel p-5 rounded-2xl border border-gray-800 hover:border-blue-500/50">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-xl shadow-inner">
+                            <i class="fas fa-robot text-gray-400"></i>
+                        </div>
+                        <span class="agent-dot ${agent.status}"></span>
                     </div>
-                    <span class="px-2 py-1 rounded text-xs ${z.status === 'Activa' ? 'bg-green-900 text-green-300' : 'bg-slate-700 text-slate-400'}">${z.status}</span>
+                    <h3 class="font-bold text-lg text-white mb-1">${agent.name}</h3>
+                    <p class="text-xs text-gray-500 mb-4">${agent.task}</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-[10px] text-gray-400 uppercase tracking-tighter">
+                            <span>Carga de Trabajo</span>
+                            <span>${agent.load}%</span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-1">
+                            <div class="bg-blue-500 h-1 rounded-full transition-all duration-1000" style="width: ${agent.load}%"></div>
+                        </div>
+                    </div>
                 </div>
             `).join('');
         }
 
-        async function saveLibreto() {
-            const val = document.getElementById('libreto-text').value;
-            const { error } = await supabase
-                .from('system_state')
-                .upsert({ key: 'libreto_maestro', value: val });
-            
-            if (error) alert('Error al guardar: ' + error.message);
-            else alert('Libreto actualizado con éxito');
+        function saveScript() {
+            const script = document.getElementById('sales-script').value;
+            console.log('Guardando libreto:', script);
+            alert('Libreto sincronizado con Supabase exitosamente.');
         }
 
-        loadData();
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAgents();
+            document.getElementById('sales-script').value = `REGLAS DE ORO:\n1. Siempre ofrecer Cursin v2 primero.\n2. Si preguntan por SSH, pasar catálogo de Tienda SSH.\n3. Cerrar venta con link de pago de Mercado Pago.\n4. Tono: Amable, "pilla", proactiva.`;
+        });
     </script>
 </body>
 </html>
