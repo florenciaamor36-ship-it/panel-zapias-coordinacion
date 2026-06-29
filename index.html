@@ -8,167 +8,106 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        :root {
-            --color-primary: #1a73e8;
-            --color-primary-dark: #8ab4f8;
-            --color-success: #34a853;
-            --color-warning: #fbbc04;
-            --color-danger: #ea4335;
-        }
-        html.dark {
-            --color-text-base: #e0e0e0;
-            --color-bg-base: #121212;
-            --color-bg-card: #1f1f1f;
-            --color-border: #333;
-            --color-accent: var(--color-primary-dark);
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--color-bg-base);
-            color: var(--color-text-base);
-        }
-        .glass-panel {
-            background: rgba(31, 31, 31, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .agent-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .agent-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--color-primary);
-            box-shadow: 0 10px 20px -10px rgba(26, 115, 232, 0.3);
-        }
-        .agent-dot {
-            width: 10px; height: 10px; border-radius: 50%; display: inline-block;
-        }
-        .agent-dot.online {
-            background-color: #34a853;
-            box-shadow: 0 0 10px rgba(52, 168, 83, 0.6);
-            animation: sync-pulse 2s infinite;
-        }
-        .agent-dot.offline {
-            background-color: #ea4335;
-            box-shadow: 0 0 4px rgba(234, 67, 53, 0.3);
-        }
-        @keyframes sync-pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.3; transform: scale(1.4); }
-        }
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        :root { --color-primary: #1a73e8; --color-success: #34a853; }
+        html.dark { --color-text-base: #e0e0e0; --color-bg-base: #121212; --color-bg-card: #1f1f1f; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--color-bg-base); color: var(--color-text-base); }
+        .glass-panel { background: rgba(31, 31, 31, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .agent-dot.online { background-color: #34a853; box-shadow: 0 0 10px rgba(52, 168, 83, 0.6); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
     <div class="max-w-7xl mx-auto space-y-8">
-        
-        <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-6">
             <div>
-                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                    Zapia Nexus <span class="text-sm font-normal text-gray-500 ml-2">v2.0</span>
-                </h1>
-                <p class="text-gray-400 mt-1">Coordinación Maestra de Agentes de Ventas</p>
+                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Zapia Nexus</h1>
+                <p class="text-gray-400 mt-1">Panel de Control Real-Time (Supabase Sync)</p>
             </div>
-            <div class="flex gap-3">
-                <button onclick="syncAll()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-                    <i class="fas fa-sync-alt"></i> Sincronizar Todo
-                </button>
-                <div class="px-4 py-2 glass-panel rounded-lg flex items-center gap-3">
-                    <span class="text-sm text-gray-400">Estado Global:</span>
-                    <span class="agent-dot online"></span>
-                    <span class="text-sm font-bold text-green-400 uppercase tracking-wider">Activo</span>
-                </div>
+            <div class="px-4 py-2 glass-panel rounded-lg flex items-center gap-3">
+                <span class="agent-dot online w-3 h-3 rounded-full"></span>
+                <span class="text-sm font-bold text-green-400">SISTEMA LIVE</span>
             </div>
         </header>
 
-        <!-- Agentes Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <!-- Los agentes se cargan aquí vía JS -->
-            <div id="agents-container" class="contents">
-                <div class="animate-pulse flex space-x-4">Cargando agentes...</div>
-            </div>
+        <div id="agents-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div class="col-span-full text-center py-10 text-gray-500 animate-pulse">Iniciando conexión segura con Supabase...</div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-            <!-- Libreto Maestro -->
             <section class="lg:col-span-2 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-xl font-semibold flex items-center gap-2">
-                        <i class="fas fa-book-open text-blue-400"></i> Libreto Maestro de Ventas
-                    </h2>
-                    <span class="text-xs text-gray-500 uppercase tracking-widest">Última edición: hace 2 min</span>
-                </div>
+                <h2 class="text-xl font-semibold flex items-center gap-2"><i class="fas fa-book-open text-blue-400"></i> Libreto Maestro</h2>
                 <div class="glass-panel rounded-xl overflow-hidden border border-gray-800">
-                    <textarea id="sales-script" class="w-full h-96 p-6 bg-transparent text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none font-mono text-sm leading-relaxed" placeholder="Escribe aquí el guión que usarán todas tus Zapias..."></textarea>
+                    <textarea id="sales-script" class="w-full h-80 p-6 bg-transparent text-gray-300 focus:outline-none font-mono text-sm" placeholder="Escribe el guión aquí..."></textarea>
                     <div class="p-4 bg-black/30 border-t border-gray-800 flex justify-end">
-                        <button onclick="saveScript()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-emerald-900/20">
-                            Actualizar en la Nube
-                        </button>
+                        <button onclick="saveScript()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-all">Actualizar Agentes</button>
                     </div>
                 </div>
             </section>
-
-            <!-- Logs de Actividad -->
             <section class="space-y-4">
-                <h2 class="text-xl font-semibold flex items-center gap-2">
-                    <i class="fas fa-terminal text-emerald-400"></i> Actividad Reciente
-                </h2>
-                <div class="glass-panel rounded-xl border border-gray-800 h-[480px] overflow-hidden flex flex-col">
-                    <div id="logs" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll font-mono text-[11px]">
-                        <div class="text-gray-500">[15:40:12] Zapia Brenda conectada.</div>
-                        <div class="text-blue-400">[15:42:01] Relevo automático: Brenda -> Sofía.</div>
-                        <div class="text-emerald-400">[15:45:30] Lead Cerrado por Zapia Sofía ($15.000).</div>
-                    </div>
+                <h2 class="text-xl font-semibold flex items-center gap-2"><i class="fas fa-terminal text-emerald-400"></i> Actividad Reciente</h2>
+                <div id="logs" class="glass-panel rounded-xl border border-gray-800 h-80 p-4 overflow-y-auto font-mono text-[10px] space-y-2">
+                    <div class="text-gray-600">[SISTEMA] Conectado al bus de datos.</div>
                 </div>
             </section>
         </div>
     </div>
 
     <script>
-        const agents = [
-            { name: 'Brenda', status: 'online', task: 'Ventas Academy', load: 12 },
-            { name: 'Sofía', status: 'online', task: 'Soporte Clientes', load: 5 },
-            { name: 'Micaela', status: 'offline', task: 'En espera (10m)', load: 0 },
-            { name: 'Valentina', status: 'offline', task: 'En espera (20m)', load: 0 },
-            { name: 'Zapia 5', status: 'offline', task: 'En espera (30m)', load: 0 }
-        ];
+        // Usamos la Clave Pública (Anon Key) para evitar el bloqueo de GitHub
+        const SB_URL = 'https://ypzudkxowpxvdggvongz.supabase.co/rest/v1';
+        const SB_KEY = 'sb_publishable_KmyqfJTmmW4R5FKUeB5b4A_GVFYnn4b';
 
-        function renderAgents() {
-            const container = document.getElementById('agents-container');
-            container.innerHTML = agents.map(agent => `
-                <div class="agent-card glass-panel p-5 rounded-2xl border border-gray-800 hover:border-blue-500/50">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-xl shadow-inner">
-                            <i class="fas fa-robot text-gray-400"></i>
+        async function fetchRealAgents() {
+            try {
+                const response = await fetch(`${SB_URL}/nexus_bus?receptor=eq.panel&order=created_at.desc&limit=50`, {
+                    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+                });
+                const data = await response.json();
+                const latestStates = {};
+                data.forEach(msg => {
+                    if (!latestStates[msg.emisor] && msg.metadata) {
+                        try { latestStates[msg.emisor] = (typeof msg.metadata === 'string') ? JSON.parse(msg.metadata) : msg.metadata; } catch(e) {}
+                    }
+                });
+
+                const container = document.getElementById('agents-container');
+                if (Object.keys(latestStates).length === 0) return;
+
+                container.innerHTML = Object.entries(latestStates).map(([id, meta]) => `
+                    <div class="glass-panel p-5 rounded-2xl border border-gray-800">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-blue-400"><i class="fas fa-robot"></i></div>
+                            <span class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_#34a853]"></span>
                         </div>
-                        <span class="agent-dot ${agent.status}"></span>
+                        <h3 class="font-bold text-white">${meta.agent_name || id}</h3>
+                        <p class="text-[10px] text-emerald-400 font-mono">${meta.phone || '2235590910'}</p>
+                        <div class="mt-4 pt-4 border-t border-gray-800 space-y-2 text-[10px]">
+                            <div class="flex justify-between text-gray-400"><span>SUBAGENTES:</span><span class="text-blue-400 font-bold">${meta.subagents || 0}</span></div>
+                            <div class="flex gap-2 text-gray-600">
+                                <i class="fas fa-brain ${meta.engines?.google_studio === 'active' ? 'text-emerald-500' : ''}"></i>
+                                <i class="fab fa-github ${meta.engines?.github === 'active' ? 'text-emerald-500' : ''}"></i>
+                                <i class="fas fa-microchip ${meta.engines?.jules === 'active' ? 'text-emerald-500' : ''}"></i>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="font-bold text-lg text-white mb-1">${agent.name}</h3>
-                    <p class="text-xs text-gray-500 mb-4">${agent.task}</p>
-                    <div class="space-y-2">
-                        <div class="flex justify-between text-[10px] text-gray-400 uppercase tracking-tighter">
-                            <span>Carga de Trabajo</span>
-                            <span>${agent.load}%</span>
-                        </div>
-                        <div class="w-full bg-gray-800 rounded-full h-1">
-                            <div class="bg-blue-500 h-1 rounded-full transition-all duration-1000" style="width: ${agent.load}%"></div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (e) { console.error(e); }
         }
 
-        function saveScript() {
+        async function saveScript() {
             const script = document.getElementById('sales-script').value;
-            console.log('Guardando libreto:', script);
-            alert('Libreto sincronizado con Supabase exitosamente.');
+            await fetch(`${SB_URL}/nexus_bus`, {
+                method: 'POST',
+                headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emisor: 'panel', receptor: 'broadcast', mensaje: 'update_script', metadata: { script: script } })
+            });
+            alert('Libreto enviado al bus de Zapias.');
         }
 
+        setInterval(fetchRealAgents, 5000);
         document.addEventListener('DOMContentLoaded', () => {
-            renderAgents();
-            document.getElementById('sales-script').value = `REGLAS DE ORO:\n1. Siempre ofrecer Cursin v2 primero.\n2. Si preguntan por SSH, pasar catálogo de Tienda SSH.\n3. Cerrar venta con link de pago de Mercado Pago.\n4. Tono: Amable, "pilla", proactiva.`;
+            fetchRealAgents();
+            document.getElementById('sales-script').value = "REGLAS DE VENTA ZAIRA:\n1. Tono proactivo y 'pilla'.\n2. Cursin v2 como prioridad.\n3. Cerrar ventas con Mercado Pago.";
         });
     </script>
 </body>
